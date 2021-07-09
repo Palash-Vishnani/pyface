@@ -10,12 +10,10 @@
 # Thanks for using Enthought open source!
 
 
+from traits.api import HasTraits, Instance, provides
+
 from pyface.qt import QtCore
-
-
-from traits.api import Any, Bool, HasTraits, Instance, provides
-
-
+from pyface.qt.QtCore import Qt
 from pyface.i_widget import IWidget, MWidget
 
 
@@ -24,20 +22,6 @@ class Widget(MWidget, HasTraits):
     """ The toolkit specific implementation of a Widget.  See the IWidget
     interface for the API documentation.
     """
-
-    # 'IWidget' interface ----------------------------------------------------
-
-    #: The toolkit specific control that represents the widget.
-    control = Any()
-
-    #: The control's optional parent control.
-    parent = Any()
-
-    #: Whether or not the control is visible
-    visible = Bool(True)
-
-    #: Whether or not the control is enabled
-    enabled = Bool(True)
 
     # Private interface ----------------------------------------------------
 
@@ -92,20 +76,55 @@ class Widget(MWidget, HasTraits):
         )
 
     def destroy(self):
-        self._remove_event_listeners()
         if self.control is not None:
+            self._remove_event_listeners()
             self.control.hide()
             self.control.deleteLater()
             self.control = None
+        super().destroy()
+
+    # ------------------------------------------------------------------------
+    # Private interface
+    # ------------------------------------------------------------------------
 
     def _add_event_listeners(self):
-        self.control.installEventFilter(self._event_filter)
+        super()._add_event_listeners()
+        if self._event_filter is not None:
+            self.control.installEventFilter(self._event_filter)
 
     def _remove_event_listeners(self):
         if self._event_filter is not None:
-            if self.control is not None:
+            if self.control is not None and self._event_filter is not None:
                 self.control.removeEventFilter(self._event_filter)
             self._event_filter = None
+        super()._remove_event_listeners()
+
+    def _get_control_tooltip(self):
+        """ Toolkit specific method to get the control's tooltip. """
+        return self.control.toolTip()
+
+    def _set_control_tooltip(self, tooltip):
+        """ Toolkit specific method to set the control's tooltip. """
+        self.control.setToolTip(tooltip)
+
+    def _observe_control_context_menu(self, remove=False):
+        """ Toolkit specific method to change the control menu observer. """
+        if remove:
+            self.control.setContextMenuPolicy(Qt.DefaultContextMenu)
+            self.control.customContextMenuRequested.disconnect(
+                self._handle_control_context_menu
+            )
+        else:
+            self.control.customContextMenuRequested.connect(
+                self._handle_control_context_menu
+            )
+            self.control.setContextMenuPolicy(Qt.CustomContextMenu)
+
+    def _handle_control_context_menu(self, pos):
+        """ Signal handler for displaying context menu. """
+        if self.control is not None and self.context_menu is not None:
+            menu = self.context_menu.create_menu(self.control)
+            menu.show(pos.x(), pos.y())
 
     # Trait change handlers --------------------------------------------------
 

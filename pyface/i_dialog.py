@@ -138,8 +138,6 @@ class MDialog(HasTraits):
     """ The mixin class that contains common code for toolkit specific
     implementations of the IDialog interface.
 
-    Implements: open()
-    Reimplements: _add_event_listeners(), _create()
     """
 
     # ------------------------------------------------------------------------
@@ -172,24 +170,3 @@ class MDialog(HasTraits):
             self.return_code = OK
 
         return self.return_code
-
-    # ------------------------------------------------------------------------
-    # Protected 'IWidget' interface.
-    # ------------------------------------------------------------------------
-
-    def _create(self):
-        """ Creates the window's widget hierarchy. """
-
-        super()._create()
-
-        self._create_contents(self.control)
-
-    # ------------------------------------------------------------------------
-    # Protected 'IWindow' interface.
-    # ------------------------------------------------------------------------
-
-    def _add_event_listeners(self):
-        """ Adds any event listeners required by the window. """
-
-        # We don't bother for dialogs.
-        pass

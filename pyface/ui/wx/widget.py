@@ -12,8 +12,9 @@
 """ Enthought pyface package component
 """
 
+import wx
 
-from traits.api import Any, Bool, HasTraits, provides
+from traits.api import HasTraits, provides
 
 
 from pyface.i_widget import IWidget, MWidget
@@ -24,20 +25,6 @@ class Widget(MWidget, HasTraits):
     """ The toolkit specific implementation of a Widget.  See the IWidget
     interface for the API documentation.
     """
-
-    # 'IWidget' interface ----------------------------------------------------
-
-    #: The toolkit specific control that represents the widget.
-    control = Any()
-
-    #: The control's optional parent control.
-    parent = Any()
-
-    #: Whether or not the control is visible
-    visible = Bool(True)
-
-    #: Whether or not the control is enabled
-    enabled = Bool(True)
 
     # ------------------------------------------------------------------------
     # 'IWidget' interface.
@@ -88,5 +75,34 @@ class Widget(MWidget, HasTraits):
 
     def destroy(self):
         if self.control is not None:
+            self._remove_event_listeners()
             self.control.Destroy()
             self.control = None
+        super().destroy()
+
+    # ------------------------------------------------------------------------
+    # Private interface
+    # ------------------------------------------------------------------------
+
+    def _get_control_tooltip(self):
+        """ Toolkit specific method to get the control's tooltip. """
+        return self.control.GetToolTipText()
+
+    def _set_control_tooltip(self, tooltip):
+        """ Toolkit specific method to set the control's tooltip. """
+        self.control.SetToolTip(tooltip)
+
+    def _observe_control_context_menu(self, remove=False):
+        """ Toolkit specific method to change the control menu observer. """
+        if remove:
+            self.control.Unbind(
+                wx.EVT_CONTEXT_MENU, handler=self._handle_context_menu
+            )
+        else:
+            self.control.Bind(wx.EVT_CONTEXT_MENU, self._handle_context_menu)
+
+    def _handle_control_context_menu(self, event):
+        """ Signal handler for displaying context menu. """
+        if self.control is not None and self.context_menu is not None:
+            menu = self.context_menu.create_menu(self.control)
+            self.control.PopupMenu(menu)

@@ -26,14 +26,8 @@ class IField(IWidget):
     #: The value held by the field.
     value = Any()
 
-    #: A tooltip for the field.
-    tooltip = Str()
-
     #: An optional context menu for the field.
     context_menu = Instance("pyface.action.menu_manager.MenuManager")
-
-    def show_context_menu(self, x, y):
-        """ Create and show the context menu at a position. """
 
     def _initialize_control(self, control):
         """ Perform any toolkit-specific initialization for the control. """
@@ -45,12 +39,6 @@ class MField(HasTraits):
     #: The value held by the field.
     value = Any()
 
-    #: A tooltip for the field.
-    tooltip = Str()
-
-    #: An optional context menu for the field.
-    context_menu = Instance("pyface.action.menu_manager.MenuManager")
-
     # ------------------------------------------------------------------------
     # IWidget interface
     # ------------------------------------------------------------------------
@@ -59,28 +47,11 @@ class MField(HasTraits):
         """ Set up toolkit-specific bindings for events """
         super()._add_event_listeners()
         self.observe(self._value_updated, "value", dispatch="ui")
-        self.observe(self._tooltip_updated, "tooltip", dispatch="ui")
-        self.observe(
-            self._context_menu_updated, "context_menu", dispatch="ui"
-        )
-        if self.control is not None and self.context_menu is not None:
-            self._observe_control_context_menu()
 
     def _remove_event_listeners(self):
         """ Remove toolkit-specific bindings for events """
-        if self.control is not None and self.context_menu is not None:
-            self._observe_control_context_menu(remove=True)
         self.observe(
             self._value_updated, "value", dispatch="ui", remove=True
-        )
-        self.observe(
-            self._tooltip_updated, "tooltip", dispatch="ui", remove=True
-        )
-        self.observe(
-            self._context_menu_updated,
-            "context_menu",
-            dispatch="ui",
-            remove=True,
         )
         super()._remove_event_listeners()
 
@@ -94,16 +65,9 @@ class MField(HasTraits):
         This method should create the control and assign it to the
         :py:attr:``control`` trait.
         """
-        self.control = self._create_control(self.parent)
-        self._initialize_control()
-        self._add_event_listeners()
-
+        super()._create()
         self.show(self.visible)
         self.enable(self.enabled)
-
-    def _initialize_control(self):
-        """ Perform any toolkit-specific initialization for the control. """
-        self._set_control_tooltip(self.tooltip)
 
     def _update_value(self, value):
         """ Handle a change to the value from user interaction
@@ -133,47 +97,9 @@ class MField(HasTraits):
         """ Toolkit specific method to change the control value observer. """
         raise NotImplementedError()
 
-    def _get_control_tooltip(self):
-        """ Toolkit specific method to get the control's tooltip. """
-        raise NotImplementedError()
-
-    def _set_control_tooltip(self, tooltip):
-        """ Toolkit specific method to set the control's tooltip. """
-        raise NotImplementedError()
-
-    def _observe_control_context_menu(self, remove=False):
-        """ Toolkit specific method to change the control menu observer.
-
-        This should use _handle_control_context_menu as the event handler.
-        """
-        raise NotImplementedError()
-
-    def _handle_control_context_menu(self, event):
-        """ Handle a context menu event.
-
-        This should call show_context_menu with appropriate position x and y
-        arguments.
-
-        The function signature will likely vary from toolkit to toolkit.
-        """
-        raise NotImplementedError()
-
     # Trait change handlers -------------------------------------------------
 
     def _value_updated(self, event):
         value = event.new
         if self.control is not None:
             self._set_control_value(value)
-
-    def _tooltip_updated(self, event):
-        tooltip = event.new
-        if self.control is not None:
-            self._set_control_tooltip(tooltip)
-
-    def _context_menu_updated(self, event):
-        
-        if self.control is not None:
-            if event.new is None:
-                self._observe_control_context_menu(remove=True)
-            if event.old is None:
-                self._observe_control_context_menu()

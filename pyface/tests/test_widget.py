@@ -15,6 +15,7 @@ import unittest
 from traits.api import Instance
 from traits.testing.api import UnittestTools
 
+from pyface.action.api import Action, MenuManager
 from ..application_window import ApplicationWindow
 from ..toolkit import toolkit_object
 from ..widget import Widget
@@ -335,3 +336,25 @@ class TestConcreteWidget(unittest.TestCase, GuiTestAssistant):
             self.widget.focus()
 
         self.assertTrue(self.widget.has_focus())
+
+    def test_field_tooltip(self):
+        with self.event_loop():
+            self.widget.create()
+            self.addCleanup(self.widget.destroy)
+        with self.event_loop():
+            self.widget.show(True)
+
+        self.widget.tooltip = "New tooltip."
+        self.gui.process_events()
+
+        self.assertEqual(self.widget._get_control_tooltip(), "New tooltip.")
+
+    def test_field_menu(self):
+        with self.event_loop():
+            self.widget.create()
+            self.addCleanup(self.widget.destroy)
+        with self.event_loop():
+            self.widget.show(True)
+
+        self.widget.menu = MenuManager(Action(name="Test"), name="Test")
+        self.gui.process_events()
